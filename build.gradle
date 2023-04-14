@@ -19,8 +19,18 @@ dependencies {
 	implementation files(pathToRisingWorld + '/Data/SDK/PluginAPI.jar')
 }
 
-task copyJar {
+task zipFiles(type: Zip) {
+	inputs.files(jar)
+	from fileTree("build/libs")
+	into rootProject.name
+}
+
+task complete {
 	doLast {
+		copy {
+			from 'icons'
+			into 'build/libs/icons'
+		}
 		def folder = new File(pluginFolder)
 		if(folder.exists()) {
 			copy {
@@ -35,4 +45,5 @@ task copyJar {
 	}
 }
 
-build.dependsOn copyJar
+complete.finalizedBy zipFiles
+build.dependsOn zipFiles
