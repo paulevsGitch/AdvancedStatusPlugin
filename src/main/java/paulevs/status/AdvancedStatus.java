@@ -9,6 +9,7 @@ import net.risingworld.api.events.Listener;
 import net.risingworld.api.events.general.UpdateEvent;
 import net.risingworld.api.events.player.PlayerConnectEvent;
 import net.risingworld.api.events.player.PlayerDisconnectEvent;
+import net.risingworld.api.events.player.PlayerKeyEvent;
 import net.risingworld.api.events.player.PlayerSpawnEvent;
 import net.risingworld.api.events.player.PlayerUpdateStatusEvent;
 import net.risingworld.api.objects.Player;
@@ -18,6 +19,7 @@ import net.risingworld.api.ui.style.Position;
 import net.risingworld.api.ui.style.Style;
 import net.risingworld.api.ui.style.Unit;
 import net.risingworld.api.ui.style.Visibility;
+import net.risingworld.api.utils.Key;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,20 +66,11 @@ public class AdvancedStatus extends Plugin implements Listener {
 	public void onPlayerConnect(PlayerConnectEvent event) {
 		Player player = event.getPlayer();
 		
-		//Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer/thirstIcon", offset);
-		//Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer/hungerIcon", offset);
-		//Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer", statusIcons);
 		Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer", invisible);
 		Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/statusBarContainer/barContainer", offset);
 		
-		//Style visible = new Style();
-		//visible.backgroundColor.set(0x000000FF);
-		//visible.opacity.set(1);
-		
-		/*Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer/diseaseIcon", visible);
-		Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer/boneIcon", visible);
-		Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer/fixedBoneIcon", visible);
-		Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer/bleedingIcon", visible);*/
+		player.setListenForKeyInput(true);
+		player.registerKeys(Key.F12);
 		
 		getPanel(player).update(player);
 	}
@@ -106,6 +99,13 @@ public class AdvancedStatus extends Plugin implements Listener {
 		});
 	}
 	
+	@EventMethod
+	public void onKeyPress(PlayerKeyEvent event) {
+		if (event.getKey() != Key.F12 || !event.isPressed()) return;
+		Player player = event.getPlayer();
+		getPanel(player).screenshot(player);
+	}
+	
 	private PlayerStatusPanel getPanel(final Player player) {
 		return panelMap.computeIfAbsent(player.getUID(), key -> new PlayerStatusPanel(player));
 	}
@@ -122,6 +122,7 @@ public class AdvancedStatus extends Plugin implements Listener {
 		private final UIElement brokenBonesIcon;
 		private final UIElement fixedBonesIcon;
 		private final UIElement bleedingIcon;
+		private int screenTimer;
 		
 		PlayerStatusPanel(Player player) {
 			panelLeft = new UIElement();
@@ -159,8 +160,29 @@ public class AdvancedStatus extends Plugin implements Listener {
 			player.addUIElement(panelRight);
 		}
 		
+		void screenshot(Player player) {
+			screenTimer = 20;
+			panelLeft.style.visibility.set(Visibility.Hidden);
+			panelRight.style.visibility.set(Visibility.Hidden);
+			player.addUIElement(panelLeft);
+			player.addUIElement(panelRight);
+		}
+		
 		void update(Player player) {
-			boolean update = updateBar(barHealth, (float) player.getHealth() / (float) player.getMaxHealth());
+			boolean forceUpdate = false;
+			
+			if (screenTimer > 0) {
+				screenTimer--;
+				if (screenTimer == 0) {
+					panelLeft.style.visibility.set(Visibility.Visible);
+					panelRight.style.visibility.set(Visibility.Visible);
+					forceUpdate = true;
+				}
+				else return;
+			}
+			
+			boolean update = forceUpdate;
+			update |= updateBar(barHealth, (float) player.getHealth() / (float) player.getMaxHealth());
 			update |= updateBar(barStamina, (float) player.getStamina() / (float) player.getMaxStamina());
 			
 			if (brokenBonesIcon.style.visibility.get() == Visibility.Visible && !player.hasBrokenBones()) {
@@ -181,7 +203,8 @@ public class AdvancedStatus extends Plugin implements Listener {
 				player.addUIElement(panelLeft);
 			}
 			
-			update = updateBar(barHunger, (float) player.getHunger() / 100.0F);
+			update = forceUpdate;
+			update |= updateBar(barHunger, (float) player.getHunger() / 100.0F);
 			update |= updateBar(barThirst, (float) player.getThirst() / 100.0F);
 			if (update) player.addUIElement(panelRight);
 		}

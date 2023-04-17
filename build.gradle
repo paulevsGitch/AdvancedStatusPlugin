@@ -4,9 +4,10 @@ plugins {
 
 def pathToRisingWorld = 'D:/SteamLibrary/steamapps/common/RisingWorld/_New Version'
 def pluginFolder = pathToRisingWorld + '/Plugins/AdvancedStatus'
+def folder = new File(pluginFolder)
 
 group 'paulevs.status'
-version '0.1.0'
+version '0.2.0'
 
 sourceCompatibility = JavaVersion.VERSION_20
 targetCompatibility = JavaVersion.VERSION_20
@@ -31,18 +32,24 @@ task complete {
 			from 'icons'
 			into 'build/libs/icons'
 		}
-		def folder = new File(pluginFolder)
-		if(folder.exists()) {
-			copy {
-				from jar
-				into pluginFolder
-			}
-			copy {
-				from 'icons'
-				into pluginFolder + '/icons'
-			}
+	}
+}
+
+task copyPlugin {
+	doLast {
+		copy {
+			from jar
+			into pluginFolder
+		}
+		copy {
+			from 'icons'
+			into pluginFolder + '/icons'
 		}
 	}
+}
+
+if(folder.exists()) {
+	zipFiles.finalizedBy copyPlugin
 }
 
 complete.finalizedBy zipFiles
