@@ -28,25 +28,21 @@ import java.util.List;
 import java.util.Map;
 
 public class AdvancedStatus extends Plugin implements Listener {
+	private static final String ICON_CONTAINER = "HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer";
+	private static final String THIRST_ICON = ICON_CONTAINER + "/thirstIcon";
+	private static final String HUNGER_ICON = ICON_CONTAINER + "/hungerIcon";
+	
 	private static final Map<String, TextureAsset> ICONS = new HashMap<>();
 	private final Map<String, PlayerStatusPanel> panelMap = new HashMap<>();
-	private final String[] hungerIcons = new String[] {
-		"HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer/thirstIcon",
-		"HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer/thirstIcon/thirstLabel",
-		"HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer/hungerIcon",
-		"HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer/hungerIcon/hungerLabel"
-	};
 	private static Config config;
 	private static int barWidth;
 	private static int barHeight;
 	private static int barGap;
+	private static int barBottom;
+	private static int barSides;
 	
 	private boolean hideOnScreens;
 	private Key screenshotKey;
-	private Style invisible;
-	private Style offsetInvisible;
-	private Style offsetRight;
-	private Style offsetLeft;
 	
 	@Override
 	public void onEnable() {
@@ -66,6 +62,8 @@ public class AdvancedStatus extends Plugin implements Listener {
 		config.addEntry("customBarHeight", 20, "Custom bars height (in pixels)", "Default is 20");
 		config.addEntry("customBarWidth", 500, "Custom bars width (in pixels)", "Default is 500");
 		config.addEntry("customBarGap", 8, "Gap between bars (in pixels)", "Default is 8");
+		config.addEntry("bottomOffset", 20, "Offset for custom bars from screen bottom (in pixels)", "Default is 20");
+		config.addEntry("sidesOffset", 20, "Offset for custom bars from screen sides (in pixels)", "Default is 20");
 		config.save();
 		
 		hideOnScreens = config.getBool("hideOnScreenshots");
@@ -74,25 +72,8 @@ public class AdvancedStatus extends Plugin implements Listener {
 		barWidth = config.getInt("customBarWidth");
 		barHeight = config.getInt("customBarHeight");
 		barGap = config.getInt("customBarGap");
-		
-		invisible = new Style();
-		invisible.visibility.set(Visibility.Hidden);
-		
-		offsetInvisible = new Style();
-		offsetInvisible.position.set(Position.Absolute);
-		offsetInvisible.bottom.set(-1000, Unit.Pixel);
-		
-		int bottomOffset = barHeight * 2 + barGap + 32;
-		
-		offsetRight = new Style();
-		offsetRight.position.set(Position.Absolute);
-		offsetRight.right.set(20, Unit.Pixel);
-		offsetRight.bottom.set(bottomOffset, Unit.Pixel);
-		
-		offsetLeft = new Style();
-		offsetLeft.position.set(Position.Absolute);
-		offsetLeft.left.set(0, Unit.Pixel);
-		offsetLeft.bottom.set(bottomOffset, Unit.Pixel);
+		barBottom = config.getInt("bottomOffset");
+		barSides = config.getInt("sidesOffset");
 		
 		System.out.println("Enabled AdvancedStatus plugin");
 	}
@@ -106,46 +87,29 @@ public class AdvancedStatus extends Plugin implements Listener {
 	public void onPlayerConnect(PlayerConnectEvent event) {
 		Player player = event.getPlayer();
 		
-		boolean hunger = config.getBool("replaceHungerAndThirst");
 		boolean icons = config.getBool("useCustomIcons");
 		
-		if (hunger) {
-			for (String icon : hungerIcons) {
-				Internals.overwriteUIStyle(player, icon, offsetInvisible);
+		if (config.getBool("replaceHungerAndThirst")) {
+			Internals.overwriteUIStyle(player, THIRST_ICON, offsetInvisible());
+			Internals.overwriteUIStyle(player, HUNGER_ICON, offsetInvisible());
+			if (!icons) {
+				Internals.overwriteUIStyle(player, ICON_CONTAINER, offsetRight(barSides));
 			}
 		}
 		
-		Internals.overwriteUIStyle(
-			player,
-			"HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer",
-			icons ? invisible : offsetRight
-		);
-		
-		/*if (config.getBool("replaceHungerAndThirst")) {
-			if (config.getBool("useCustomIcons")) {
-				Internals.overwriteUIStyle(
-					player,
-					"HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer",
-					invisible
-				);
-			}
-			Internals.overwriteUIStyle(
-				player,
-				"HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer",
-				invisible
-			);
-		}*/
+		if (icons) {
+			Internals.overwriteUIStyle(player, ICON_CONTAINER, invisible());
+		}
 		
 		if (config.getBool("replaceHealthAndStamina")) {
 			Internals.overwriteUIStyle(
 				player,
 				"HudLayer/hudContainer/statusContainer/statusBarContainer/barContainer",
-				offsetInvisible
+				offsetInvisible()
 			);
-			Internals.overwriteUIStyle(player, "HudLayer/hudContainer/leftContainer", offsetLeft);
-			//Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/centerContainer", offsetLeft);
-			Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/centerContainer/elementContainer", offsetLeft);
-			Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/statusBarContainer/quickHelpContainer", offsetLeft);
+			Internals.overwriteUIStyle(player, "HudLayer/hudContainer/leftContainer", offsetLeft());
+			Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/centerContainer/elementContainer", offsetLeft());
+			Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/statusBarContainer/quickHelpContainer", offsetLeft());
 		}
 		
 		player.setListenForKeyInput(true);
@@ -185,12 +149,43 @@ public class AdvancedStatus extends Plugin implements Listener {
 		getPanel(player).screenshot(player);
 	}
 	
+	private Style offsetLeft() {
+		Style style = new Style();
+		style.position.set(Position.Absolute);
+		style.left.set(0, Unit.Pixel);
+		style.bottom.set(barHeight * 2 + barGap + barBottom + 10, Unit.Pixel);
+		return style;
+	}
+	
+	private Style offsetRight(int x) {
+		Style style = new Style();
+		style.position.set(Position.Absolute);
+		style.left.set(x, Unit.Pixel);
+		style.bottom.set(barHeight * 2 + barGap + barBottom + 10, Unit.Pixel);
+		return style;
+	}
+	
+	private Style offsetInvisible() {
+		Style style = new Style();
+		style.position.set(Position.Absolute);
+		style.bottom.set(-1000, Unit.Pixel);
+		return style;
+	}
+	
+	private Style invisible() {
+		Style style = new Style();
+		style.visibility.set(Visibility.Hidden);
+		return style;
+	}
+	
 	private PlayerStatusPanel getPanel(final Player player) {
 		return panelMap.computeIfAbsent(player.getUID(), key -> new PlayerStatusPanel(player));
 	}
 	
 	private static final class PlayerStatusPanel {
+		private final List<UIElement> icons = new ArrayList<>();
 		private final UIElement globalPanel;
+		
 		private UIElement panelLeft;
 		private UIElement panelRight;
 		private UIElement barHealth;
@@ -198,7 +193,6 @@ public class AdvancedStatus extends Plugin implements Listener {
 		private UIElement barThirst;
 		private UIElement barStamina;
 		
-		private final List<UIElement> icons = new ArrayList<>();
 		private UIElement brokenBonesIcon;
 		private UIElement fixedBonesIcon;
 		private UIElement bleedingIcon;
@@ -213,9 +207,9 @@ public class AdvancedStatus extends Plugin implements Listener {
 			
 			if (config.getBool("replaceHealthAndStamina")) {
 				panelLeft = new UIElement();
-				panelLeft.setSize(barWidth + 4, 54, false);
-				panelLeft.style.left.set(20, Unit.Pixel);
-				panelLeft.style.bottom.set(20, Unit.Pixel);
+				panelLeft.setSize(barWidth + 4, barHeight * 2 + barGap, false);
+				panelLeft.style.left.set(barSides, Unit.Pixel);
+				panelLeft.style.bottom.set(barBottom, Unit.Pixel);
 				panelLeft.style.position.set(Position.Absolute);
 				panelLeft.setBackgroundColor(0x00000000);
 				globalPanel.addChild(panelLeft);
@@ -229,9 +223,9 @@ public class AdvancedStatus extends Plugin implements Listener {
 			
 			if (hunger || icons) {
 				panelRight = new UIElement();
-				panelRight.setSize(barWidth + 4, 54, false);
-				panelRight.style.right.set(20, Unit.Pixel);
-				panelRight.style.bottom.set(20, Unit.Pixel);
+				panelRight.setSize(barWidth + 4, barHeight * 2 + barGap, false);
+				panelRight.style.right.set(barSides, Unit.Pixel);
+				panelRight.style.bottom.set(barBottom, Unit.Pixel);
 				panelRight.style.position.set(Position.Absolute);
 				panelRight.setBackgroundColor(0x00000000);
 				globalPanel.addChild(panelRight);
@@ -243,15 +237,6 @@ public class AdvancedStatus extends Plugin implements Listener {
 			}
 			
 			if (icons) {
-				if (panelRight == null) {
-					panelRight = new UIElement();
-					panelRight.setSize(504, 54, false);
-					panelRight.style.right.set(20, Unit.Pixel);
-					panelRight.style.bottom.set(20, Unit.Pixel);
-					panelRight.style.position.set(Position.Absolute);
-					panelRight.setBackgroundColor(0x00000000);
-				}
-				
 				brokenBonesIcon = makeIcon("brokenBones", player.hasBrokenBones());
 				panelRight.addChild(brokenBonesIcon);
 				
@@ -264,8 +249,6 @@ public class AdvancedStatus extends Plugin implements Listener {
 				sortIcons();
 			}
 			
-			//player.addUIElement(panelLeft);
-			//player.addUIElement(panelRight);
 			player.addUIElement(globalPanel);
 		}
 		
