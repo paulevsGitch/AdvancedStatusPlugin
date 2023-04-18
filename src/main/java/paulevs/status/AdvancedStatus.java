@@ -152,16 +152,16 @@ public class AdvancedStatus extends Plugin implements Listener {
 	private Style offsetLeft() {
 		Style style = new Style();
 		style.position.set(Position.Absolute);
-		style.left.set(0, Unit.Pixel);
 		style.bottom.set(barHeight * 2 + barGap + barBottom + 10, Unit.Pixel);
+		style.left.set(0, Unit.Pixel);
 		return style;
 	}
 	
 	private Style offsetRight(int x) {
 		Style style = new Style();
 		style.position.set(Position.Absolute);
-		style.left.set(x, Unit.Pixel);
 		style.bottom.set(barHeight * 2 + barGap + barBottom + 10, Unit.Pixel);
+		style.right.set(x, Unit.Pixel);
 		return style;
 	}
 	
