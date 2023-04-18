@@ -28,7 +28,12 @@ import java.util.List;
 import java.util.Map;
 
 public class AdvancedStatus extends Plugin implements Listener {
+	private static final String QUICK_HELP_CONTAINER = "HudLayer/hudContainer/statusContainer/statusBarContainer/quickHelpContainer";
+	private static final String ELEMENT_CONTAINER = "HudLayer/hudContainer/statusContainer/centerContainer/elementContainer";
 	private static final String ICON_CONTAINER = "HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer";
+	private static final String BAR_CONTAINER = "HudLayer/hudContainer/statusContainer/statusBarContainer/barContainer";
+	private static final String SELECTOR_INFO_LABEL = "HudLayer/hudContainer/statusContainer/selectorInfoLabel";
+	private static final String LEFT_CONTAINER = "HudLayer/hudContainer/leftContainer";
 	private static final String THIRST_ICON = ICON_CONTAINER + "/thirstIcon";
 	private static final String HUNGER_ICON = ICON_CONTAINER + "/hungerIcon";
 	
@@ -102,14 +107,11 @@ public class AdvancedStatus extends Plugin implements Listener {
 		}
 		
 		if (config.getBool("replaceHealthAndStamina")) {
-			Internals.overwriteUIStyle(
-				player,
-				"HudLayer/hudContainer/statusContainer/statusBarContainer/barContainer",
-				offsetInvisible()
-			);
-			Internals.overwriteUIStyle(player, "HudLayer/hudContainer/leftContainer", offsetLeft());
-			Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/centerContainer/elementContainer", offsetLeft());
-			Internals.overwriteUIStyle(player, "HudLayer/hudContainer/statusContainer/statusBarContainer/quickHelpContainer", offsetLeft());
+			Internals.overwriteUIStyle(player, BAR_CONTAINER, offsetInvisible());
+			Internals.overwriteUIStyle(player, LEFT_CONTAINER, offsetLeft(0));
+			Internals.overwriteUIStyle(player, SELECTOR_INFO_LABEL, offsetLeft(barSides));
+			Internals.overwriteUIStyle(player, ELEMENT_CONTAINER, offsetLeft(0));
+			Internals.overwriteUIStyle(player, QUICK_HELP_CONTAINER, offsetLeft(0));
 		}
 		
 		player.setListenForKeyInput(true);
@@ -137,9 +139,9 @@ public class AdvancedStatus extends Plugin implements Listener {
 	
 	@EventMethod
 	public void updateAllPlayers(UpdateEvent event) {
-		Arrays.stream(Server.getAllPlayers()).forEach(player -> {
-			getPanel(player).update(player);
-		});
+		Arrays.stream(Server.getAllPlayers()).forEach(player ->
+			getPanel(player).update(player)
+		);
 	}
 	
 	@EventMethod
@@ -149,18 +151,18 @@ public class AdvancedStatus extends Plugin implements Listener {
 		getPanel(player).screenshot(player);
 	}
 	
-	private Style offsetLeft() {
+	private Style offsetLeft(int x) {
 		Style style = new Style();
 		style.position.set(Position.Absolute);
-		style.bottom.set(barHeight * 2 + barGap + barBottom + 10, Unit.Pixel);
-		style.left.set(0, Unit.Pixel);
+		style.bottom.set(barHeight * 2 + barGap + barBottom + 8, Unit.Pixel);
+		style.left.set(x, Unit.Pixel);
 		return style;
 	}
 	
 	private Style offsetRight(int x) {
 		Style style = new Style();
 		style.position.set(Position.Absolute);
-		style.bottom.set(barHeight * 2 + barGap + barBottom + 10, Unit.Pixel);
+		style.bottom.set(barHeight * 2 + barGap + barBottom + 8, Unit.Pixel);
 		style.right.set(x, Unit.Pixel);
 		return style;
 	}
