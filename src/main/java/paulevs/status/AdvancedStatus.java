@@ -117,12 +117,14 @@ public class AdvancedStatus extends Plugin implements Listener {
 		Player player = event.getPlayer();
 		
 		if (player.isAdmin() && pluginJars.size() > 1) {
-			StringBuilder message = new StringBuilder("Plugin Advanced Status have two jars:\n");
+			StringBuilder message = new StringBuilder("Plugin Advanced Status have ");
+			message.append(pluginJars.size());
+			message.append(" jars:\n");
 			pluginJars.forEach(jar -> {
 				message.append(jar);
 				message.append("\n");
 			});
-			message.append("There should be only one jar (the latest one), otherwise plugin will not work correctly");
+			message.append("There should be only one jar (the latest one with largest version number), otherwise plugin will not work correctly");
 			player.showErrorMessageBox("Too Many Jars", message.toString());
 		}
 		
