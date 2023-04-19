@@ -7,7 +7,7 @@ def pluginFolder = pathToRisingWorld + '/Plugins/AdvancedStatus'
 def folder = new File(pluginFolder)
 
 group 'paulevs.status'
-version '0.2.0'
+version '0.3.0'
 
 sourceCompatibility = JavaVersion.VERSION_20
 targetCompatibility = JavaVersion.VERSION_20

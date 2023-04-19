@@ -46,6 +46,12 @@ public class AdvancedStatus extends Plugin implements Listener {
 	private static int barBottom;
 	private static int barSides;
 	
+	private static int backColor;
+	private static int healthColor;
+	private static int staminaColor;
+	private static int hungerColor;
+	private static int thirstColor;
+	
 	private boolean hideOnScreens;
 	private Key screenshotKey;
 	
@@ -69,6 +75,11 @@ public class AdvancedStatus extends Plugin implements Listener {
 		config.addEntry("customBarGap", 8, "Gap between bars (in pixels)", "Default is 8");
 		config.addEntry("bottomOffset", 20, "Offset for custom bars from screen bottom (in pixels)", "Default is 20");
 		config.addEntry("sidesOffset", 20, "Offset for custom bars from screen sides (in pixels)", "Default is 20");
+		config.addEntry("barsBackgroundColor", "#000000E6", "Background color for bars (outline), in RGBA format", "Default is #000000E6");
+		config.addEntry("healthBarColor", "#B01A1AFF", "Color for health bar in RGBA (or RGB) format", "Default is #B01A1AFF");
+		config.addEntry("staminaBarColor", "#F7F027FF", "Color for stamina bar in RGBA (or RGB) format", "Default is #F7F027FF");
+		config.addEntry("hungerBarColor", "#2FC32CFF", "Color for hunger bar in RGBA (or RGB) format", "Default is #2FC32CFF");
+		config.addEntry("thirstBarColor", "#294BE1FF", "Color for thirst bar in RGBA (or RGB) format", "Default is #294BE1FF");
 		config.save();
 		
 		hideOnScreens = config.getBool("hideOnScreenshots");
@@ -79,6 +90,12 @@ public class AdvancedStatus extends Plugin implements Listener {
 		barGap = config.getInt("customBarGap");
 		barBottom = config.getInt("bottomOffset");
 		barSides = config.getInt("sidesOffset");
+		
+		backColor = parseColor(config.getString("barsBackgroundColor"));
+		healthColor = parseColor(config.getString("healthBarColor"));
+		staminaColor = parseColor(config.getString("staminaBarColor"));
+		hungerColor = parseColor(config.getString("hungerBarColor"));
+		thirstColor = parseColor(config.getString("thirstBarColor"));
 		
 		System.out.println("Enabled AdvancedStatus plugin");
 	}
@@ -184,6 +201,15 @@ public class AdvancedStatus extends Plugin implements Listener {
 		return panelMap.computeIfAbsent(player.getUID(), key -> new PlayerStatusPanel(player));
 	}
 	
+	private int parseColor(String color) {
+		color = color.substring(1);
+		int a = color.length() == 6 ? 255 : Integer.parseInt(color.substring(6), 16);
+		int r = Integer.parseInt(color.substring(0, 2), 16);
+		int g = Integer.parseInt(color.substring(2, 4), 16);
+		int b = Integer.parseInt(color.substring(4, 6), 16);
+		return r << 24 | g << 16 | b << 8 | a;
+	}
+	
 	private static final class PlayerStatusPanel {
 		private final List<UIElement> icons = new ArrayList<>();
 		private final UIElement globalPanel;
@@ -216,8 +242,8 @@ public class AdvancedStatus extends Plugin implements Listener {
 				panelLeft.setBackgroundColor(0x00000000);
 				globalPanel.addChild(panelLeft);
 				
-				barHealth = makeBar(panelLeft, 0, 0, 0XB01A1AFF, Pivot.UpperLeft);
-				barStamina = makeBar(panelLeft, 0, barHeight + barGap, 0XF7F027FF, Pivot.UpperLeft);
+				barHealth = makeBar(panelLeft, 0, 0, healthColor, Pivot.UpperLeft);
+				barStamina = makeBar(panelLeft, 0, barHeight + barGap, staminaColor, Pivot.UpperLeft);
 			}
 			
 			boolean hunger = config.getBool("replaceHungerAndThirst");
@@ -234,8 +260,8 @@ public class AdvancedStatus extends Plugin implements Listener {
 			}
 			
 			if (hunger) {
-				barHunger = makeBar(panelRight, 0, 0, 0X2FC32CFF, Pivot.UpperRight);
-				barThirst = makeBar(panelRight, 0, barHeight + barGap, 0X294BE1FF, Pivot.UpperRight);
+				barHunger = makeBar(panelRight, 0, 0, hungerColor, Pivot.UpperRight);
+				barThirst = makeBar(panelRight, 0, barHeight + barGap, thirstColor, Pivot.UpperRight);
 			}
 			
 			if (icons) {
@@ -322,7 +348,7 @@ public class AdvancedStatus extends Plugin implements Listener {
 		
 		private UIElement makeBar(UIElement panel, int x, int y, int color, Pivot pivot) {
 			UIElement back = new UIElement();
-			back.setBackgroundColor(0x000000E6);
+			back.setBackgroundColor(backColor);
 			back.setPosition(x, y, false);
 			back.setPivot(Pivot.UpperLeft);
 			back.setSize(barWidth + 4, barHeight + 4, false);
