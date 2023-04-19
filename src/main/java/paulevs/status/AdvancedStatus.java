@@ -3,6 +3,7 @@ package paulevs.status;
 import net.risingworld.api.Internals;
 import net.risingworld.api.Plugin;
 import net.risingworld.api.Server;
+import net.risingworld.api.World;
 import net.risingworld.api.assets.TextureAsset;
 import net.risingworld.api.events.EventMethod;
 import net.risingworld.api.events.Listener;
@@ -21,11 +22,14 @@ import net.risingworld.api.ui.style.Unit;
 import net.risingworld.api.ui.style.Visibility;
 import net.risingworld.api.utils.Key;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class AdvancedStatus extends Plugin implements Listener {
 	private static final String QUICK_HELP_CONTAINER = "HudLayer/hudContainer/statusContainer/statusBarContainer/quickHelpContainer";
@@ -53,6 +57,7 @@ public class AdvancedStatus extends Plugin implements Listener {
 	private static int thirstColor;
 	
 	private boolean hideOnScreens;
+	private List<String> pluginJars;
 	private Key screenshotKey;
 	
 	@Override
@@ -97,6 +102,8 @@ public class AdvancedStatus extends Plugin implements Listener {
 		hungerColor = parseColor(config.getString("hungerBarColor"));
 		thirstColor = parseColor(config.getString("thirstBarColor"));
 		
+		pluginJars = getPluginJars(this);
+		
 		System.out.println("Enabled AdvancedStatus plugin");
 	}
 	
@@ -108,6 +115,16 @@ public class AdvancedStatus extends Plugin implements Listener {
 	@EventMethod
 	public void onPlayerConnect(PlayerConnectEvent event) {
 		Player player = event.getPlayer();
+		
+		if (player.isAdmin() && pluginJars.size() > 1) {
+			StringBuilder message = new StringBuilder("Plugin Advanced Status have two jars:\n");
+			pluginJars.forEach(jar -> {
+				message.append(jar);
+				message.append("\n");
+			});
+			message.append("There should be only one jar (the latest one), otherwise plugin will not work correctly");
+			player.showErrorMessageBox("Too Many Jars", message.toString());
+		}
 		
 		boolean icons = config.getBool("useCustomIcons");
 		
@@ -208,6 +225,12 @@ public class AdvancedStatus extends Plugin implements Listener {
 		int g = Integer.parseInt(color.substring(2, 4), 16);
 		int b = Integer.parseInt(color.substring(4, 6), 16);
 		return r << 24 | g << 16 | b << 8 | a;
+	}
+	
+	private List<String> getPluginJars(AdvancedStatus self) {
+		File[] files = new File(self.getPath()).listFiles();
+		if (files == null) return Collections.emptyList();
+		return Arrays.stream(files).map(File::getName).filter(name -> name.endsWith(".jar")).collect(Collectors.toList());
 	}
 	
 	private static final class PlayerStatusPanel {
