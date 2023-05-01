@@ -3,7 +3,6 @@ package paulevs.status;
 import net.risingworld.api.Internals;
 import net.risingworld.api.Plugin;
 import net.risingworld.api.Server;
-import net.risingworld.api.World;
 import net.risingworld.api.assets.TextureAsset;
 import net.risingworld.api.events.EventMethod;
 import net.risingworld.api.events.Listener;
@@ -37,6 +36,7 @@ public class AdvancedStatus extends Plugin implements Listener {
 	private static final String ICON_CONTAINER = "HudLayer/hudContainer/statusContainer/rightContainer/statusIconContainer";
 	private static final String BAR_CONTAINER = "HudLayer/hudContainer/statusContainer/statusBarContainer/barContainer";
 	private static final String SELECTOR_INFO_LABEL = "HudLayer/hudContainer/statusContainer/selectorInfoLabel";
+	private static final String RIGHT_CONTAINER = "HudLayer/hudContainer/statusContainer/rightContainer";
 	private static final String LEFT_CONTAINER = "HudLayer/hudContainer/leftContainer";
 	private static final String THIRST_ICON = ICON_CONTAINER + "/thirstIcon";
 	private static final String HUNGER_ICON = ICON_CONTAINER + "/hungerIcon";
@@ -49,6 +49,7 @@ public class AdvancedStatus extends Plugin implements Listener {
 	private static int barGap;
 	private static int barBottom;
 	private static int barSides;
+	private static int iconSize;
 	
 	private static int backColor;
 	private static int healthColor;
@@ -73,6 +74,7 @@ public class AdvancedStatus extends Plugin implements Listener {
 		config.addEntry("replaceHealthAndStamina", true, "Replace health and stamina bars with custom", "Default is true");
 		config.addEntry("replaceHungerAndThirst", true, "Replace hunger and thirst icons with custom bars", "Default is true");
 		config.addEntry("useCustomIcons", true, "Use custom effect icons instead of built-in", "For example for broken bones status", "Default is true");
+		config.addEntry("customIconSize", 64, "Custom icons size (in pixels)", "Default is 64");
 		config.addEntry("hideOnScreenshots", true, "Hide custom UI during screenshot", "Default is true");
 		config.addEntry("screenshotKey", "F12", "Screenshot key (only detects when user take a screenshot)", "Default is F12");
 		config.addEntry("customBarHeight", 20, "Custom bars height (in pixels)", "Default is 20");
@@ -101,6 +103,7 @@ public class AdvancedStatus extends Plugin implements Listener {
 		staminaColor = parseColor(config.getString("staminaBarColor"));
 		hungerColor = parseColor(config.getString("hungerBarColor"));
 		thirstColor = parseColor(config.getString("thirstBarColor"));
+		iconSize = config.getInt("customIconSize");
 		
 		pluginJars = getPluginJars(this);
 		
@@ -133,9 +136,6 @@ public class AdvancedStatus extends Plugin implements Listener {
 		if (config.getBool("replaceHungerAndThirst")) {
 			Internals.overwriteUIStyle(player, THIRST_ICON, offsetInvisible());
 			Internals.overwriteUIStyle(player, HUNGER_ICON, offsetInvisible());
-			if (!icons) {
-				Internals.overwriteUIStyle(player, ICON_CONTAINER, offsetRight(barSides));
-			}
 		}
 		
 		if (icons) {
@@ -145,6 +145,7 @@ public class AdvancedStatus extends Plugin implements Listener {
 		if (config.getBool("replaceHealthAndStamina")) {
 			Internals.overwriteUIStyle(player, BAR_CONTAINER, offsetInvisible());
 			Internals.overwriteUIStyle(player, LEFT_CONTAINER, offsetLeft(0));
+			Internals.overwriteUIStyle(player, RIGHT_CONTAINER, offsetRight(barSides));
 			Internals.overwriteUIStyle(player, SELECTOR_INFO_LABEL, offsetLeft(barSides));
 			Internals.overwriteUIStyle(player, ELEMENT_CONTAINER, offsetLeft(0));
 			Internals.overwriteUIStyle(player, QUICK_HELP_CONTAINER, offsetLeft(0));
@@ -326,8 +327,6 @@ public class AdvancedStatus extends Plugin implements Listener {
 			if (panelLeft != null) {
 				update |= updateBar(barHealth, (float) player.getHealth() / (float) player.getMaxHealth());
 				update |= updateBar(barStamina, (float) player.getStamina() / (float) player.getMaxStamina());
-				
-				if (update) player.addUIElement(panelLeft);
 			}
 			
 			if (panelRight != null) {
@@ -335,19 +334,9 @@ public class AdvancedStatus extends Plugin implements Listener {
 				update |= updateBar(barThirst, (float) player.getThirst() / 100.0F);
 				
 				if (brokenBonesIcon != null) {
-					if (brokenBonesIcon.style.visibility.get() == Visibility.Visible && !player.hasBrokenBones()) {
-						brokenBonesIcon.style.visibility.set(Visibility.Hidden);
-						fixedBonesIcon.style.visibility.set(Visibility.Visible);
-						update = true;
-					}
-					else if (fixedBonesIcon.style.visibility.get() == Visibility.Visible && player.getHealth() == player.getMaxHealth()) {
-						fixedBonesIcon.style.visibility.set(Visibility.Hidden);
-						update = true;
-					}
-					
 					update |= updateIcon(brokenBonesIcon, player.hasBrokenBones());
+					update |= updateIcon(fixedBonesIcon, player.hasHealedBones());
 					update |= updateIcon(bleedingIcon, player.isBleeding());
-					
 					if (update) {
 						sortIcons();
 					}
@@ -395,19 +384,19 @@ public class AdvancedStatus extends Plugin implements Listener {
 			icon.style.backgroundImage.set(ICONS.get(name));
 			icon.style.visibility.set(visible ? Visibility.Visible : Visibility.Hidden);
 			icon.style.position.set(Position.Absolute);
-			icon.style.bottom.set(80, Unit.Pixel);
-			icon.style.right.set(20, Unit.Pixel);
-			icon.setSize(64, 64, false);
+			icon.style.bottom.set(barHeight * 2 + barGap + barBottom - 8, Unit.Pixel);
+			icon.style.right.set(barSides, Unit.Pixel);
+			icon.setSize(iconSize, iconSize, false);
 			icons.add(icon);
 			return icon;
 		}
 		
 		private void sortIcons() {
-			int x = 20;
+			int x = barSides;
 			for (UIElement icon: icons) {
 				if (icon.style.visibility.get() == Visibility.Hidden) continue;
 				icon.style.right.set(x);
-				x += 64;
+				x += iconSize;
 			}
 		}
 	}
