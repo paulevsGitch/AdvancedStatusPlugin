@@ -48,9 +48,15 @@ task copyPlugin {
 	}
 }
 
+task cleanup(type: Delete) {
+	delete fileTree('build/libs') {
+		include '**/*.jar'
+	}
+}
+
 if(folder.exists()) {
 	zipFiles.finalizedBy copyPlugin
 }
 
-complete.finalizedBy zipFiles
+complete.finalizedBy(cleanup, zipFiles)
 build.dependsOn zipFiles
