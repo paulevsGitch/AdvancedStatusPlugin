@@ -7,17 +7,29 @@ def pluginFolder = pathToRisingWorld + '/Plugins/AdvancedStatus'
 def folder = new File(pluginFolder)
 
 group 'paulevs.status'
-version '0.3.0'
+version '0.3.1'
 
 sourceCompatibility = JavaVersion.VERSION_20
 targetCompatibility = JavaVersion.VERSION_20
 
 repositories {
 	mavenCentral()
+	maven { url 'https://jitpack.io' }
+}
+
+configurations {
+	implAndInclude
+	implementation.extendsFrom(implAndInclude)
 }
 
 dependencies {
 	implementation files(pathToRisingWorld + '/Data/SDK/PluginAPI.jar')
+	implAndInclude 'com.github.paulevsGitch.UniLib:unilib-config-utils:cb9e6fb312'
+}
+
+jar {
+	duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+	from configurations.implAndInclude.asFileTree.files.collect { zipTree(it) }
 }
 
 task zipFiles(type: Zip) {

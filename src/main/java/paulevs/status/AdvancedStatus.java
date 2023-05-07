@@ -20,6 +20,7 @@ import net.risingworld.api.ui.style.Style;
 import net.risingworld.api.ui.style.Unit;
 import net.risingworld.api.ui.style.Visibility;
 import net.risingworld.api.utils.Key;
+import net.unilib.config.Config;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -70,7 +71,7 @@ public class AdvancedStatus extends Plugin implements Listener {
 		ICONS.put("fixedBones", TextureAsset.loadFromFile(path + "/icons/fixedBones.png"));
 		ICONS.put("bleeding", TextureAsset.loadFromFile(path + "/icons/bleeding.png"));
 		
-		config = new Config("config", this);
+		config = Config.make(this, "config");
 		config.addEntry("replaceHealthAndStamina", true, "Replace health and stamina bars with custom", "Default is true");
 		config.addEntry("replaceHungerAndThirst", true, "Replace hunger and thirst icons with custom bars", "Default is true");
 		config.addEntry("useCustomIcons", true, "Use custom effect icons instead of built-in", "For example for broken bones status", "Default is true");
